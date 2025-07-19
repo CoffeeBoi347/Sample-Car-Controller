@@ -16,18 +16,31 @@ public class CarController : MonoBehaviour
     public float moveForce;
     private float inputForward;
     private float inputSteering;
-
     private float maxSpeed = 30f;
+
+    [Header("Grounded Checks")]
+
+    private bool isGrounded;
+    private float groundedCheck = 1f;
+    private int getLayerMask;
+
     private void Start()
     {
         acceleration = 0;
+        getLayerMask = LayerMask.GetMask("GroundLayer");
+        if(getLayerMask < 0)
+        {
+            Debug.LogError("Ground layer not found!");
+            return;
+        }
+
         rb = GetComponent<Rigidbody>();
         rb.drag = drag;
         rb.angularDrag = angularDrag;
         rb.centerOfMass = new Vector3(0f, -0.5f, 0f);
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         InputMovement();
     }
@@ -37,10 +50,20 @@ public class CarController : MonoBehaviour
         inputForward = Input.GetAxis("Vertical");
         inputSteering = Input.GetAxis("Horizontal");
 
-        MoveForward();
-        HandleSpeed();
-        MoveSteering();
-        LimitMovement();
+        RaycastHit hit;
+        if(Physics.Raycast(transform.position, Vector3.down, out hit, groundedCheck, getLayerMask))
+        {
+            isGrounded = true;
+            MoveForward();
+            HandleSpeed();
+            MoveSteering();
+            LimitMovement();
+        }
+
+        else
+        {
+            isGrounded = false;
+        }
     }
 
     void MoveForward()
